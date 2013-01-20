@@ -25,6 +25,7 @@ def process_server_desc(paths):
 
 def find_desc(descs, consensus_paths):
     with reader.DescriptorReader(consensus_paths) as desc_reader:
+        descs_per_consensus = []
         # this is O(n*n). optimize.
         for router in desc_reader:
             matched_descs = descs.get(router.fingerprint, None)
@@ -37,13 +38,13 @@ def find_desc(descs, consensus_paths):
                 # server descs don't have flags, lets steal
                 # it from the consensus
                 selected_desc.flags = router.flags
-                descs[selected_desc.fingerprint] = selected_desc
+                descs_per_consensus.setdefault(router.document.valid_after, []).append(selected_desc)
 
-    return descs
+    return descs_per_consensus
 
 def port_filter(desc, port):
     return desc.exit_policy.can_exit_to(port=port)
-    
+
 
 def family_filter(desc, families):
     return any(fp in families for fp in desc.family)
@@ -52,9 +53,9 @@ def family_filter(desc, families):
 def subnet_filter(desc, ip):
     def find_prefix(ip):
         return '.'.join(ip.split('.')[:-1])
-    
+
     return find_prefix(desc) == find_prefix(ip)
-    
+
 def flag_filter(desc, flag):
     # desc is from ns doc, not server desc
     # flags is not present in server desc
