@@ -72,28 +72,28 @@ def find_cw(desc, weights, position):
 
     # improve this by writing some py magic
     if position == 'guard':
-        if guard:
-            bw *= weights['Wgg']
-        elif guard and exit:
+        if guard and exit:
             bw *= weights['Wgd']
+        elif guard:
+            bw *= weights['Wgg']
         else:
             bw *= weights['Wgm']
     elif position == 'middle':
-        if guard:
+        if guard and exit:
+            bw *= weights['Wmd']
+        elif guard:
             bw *= weights['Wgm']
         elif exit:
             bw *= weights['Wme']
-        elif guard and exit:
-            bw *= weights['Wmd']
         else:
             bw *= weights['Wmm']
     elif position == 'exit':
-        if guard:
+        if guard and exit:
+            bw *= weights['Wed']
+        elif guard:
             bw *= weights['Weg']
         elif exit:
             bw *= weights['Wee']
-        elif guard and exit:
-            bw *= weights['Wed']
         else:
             bw *= weights['Wed']
 
