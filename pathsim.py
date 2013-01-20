@@ -54,7 +54,7 @@ def subnet_filter(desc, ip):
     def find_prefix(ip):
         return '.'.join(ip.split('.')[:-1])
 
-    return find_prefix(desc) == find_prefix(ip)
+    return find_prefix(desc.address) == find_prefix(ip)
 
 def flag_filter(desc, flag):
     # desc is from ns doc, not server desc
