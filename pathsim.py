@@ -20,7 +20,6 @@ def process_server_desc(paths):
         for desc in desc_reader:
             desc.unix_timestamp = timestamp(desc.published)
             descs.setdefault(desc.fingerprint, []).append(desc)
-            print desc
 
     return descs
 
@@ -35,7 +34,70 @@ def find_desc(descs, consensus_paths):
                 for desc in matched_descs:
                     if desc.unix_timestamp <= published and desc.unix_timestamp >= selected_desc.unix_timestamp:
                         selected_desc = desc
-                print selected_desc.fingerprint
+                # server descs don't have flags, lets steal
+                # it from the consensus
+                selected_desc.flags = router.flags
+                descs[selected_desc.fingerprint] = selected_desc
+
+    return descs
+
+def port_filter(desc, port):
+    return desc.exit_policy.can_exit_to(port=port)
+    
+
+def family_filter(desc, families):
+    return any(fp in families for fp in desc.family)
+
+# make modular for diff subnets
+def subnet_filter(desc, ip):
+    def find_prefix(ip):
+        return '.'.join(ip.split('.')[:-1])
+    
+    return find_prefix(desc) == find_prefix(ip)
+    
+def flag_filter(desc, flag):
+    # desc is from ns doc, not server desc
+    # flags is not present in server desc
+    return flag in desc.flags
+
+def calculate_bw(desc):
+    return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
+
+def find_cw(desc, weights, position):
+    bw = desc.calculate_bw(desc)
+    flags = desc.flags
+
+    guard = 'Guard' in flags
+    exit = 'Exit' in flags
+
+    # improve this by writing some py magic
+    if position == 'guard':
+        if guard:
+            bw *= weights['Wgg']
+        elif guard and exit:
+            bw *= weights['Wgd']
+        else:
+            bw *= weights['Wgm']
+    elif position == 'middle':
+        if guard:
+            bw *= weights['Wgm']
+        elif exit:
+            bw *= weights['Wme']
+        elif guard and exit:
+            bw *= weights['Wmd']
+        else:
+            bw *= weights['Wmm']
+    elif position == 'exit':
+        if guard:
+            bw *= weights['Weg']
+        elif exit:
+            bw *= weights['Wee']
+        elif guard and exit:
+            bw *= weights['Wed']
+        else:
+            bw *= weights['Wed']
+
+    return bw
 
 if __name__ == "__main__":
     desc_path = []
