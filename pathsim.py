@@ -16,11 +16,11 @@ def timestamp(t):
 def process_server_desc(paths):
     descs = {}
 
-    with reader.DescriptorReader(paths) as desc_reader:
+    with reader.DescriptorReader(paths, validate=False) as desc_reader:
         for desc in desc_reader:
+            print desc
             desc.unix_timestamp = timestamp(desc.published)
             descs.setdefault(desc.fingerprint, []).append(desc)
-
     return descs
 
 def find_desc(descs, consensus_paths):
@@ -41,25 +41,6 @@ def find_desc(descs, consensus_paths):
                 descs_per_consensus.setdefault(router.document.valid_after, []).append(selected_desc)
 
     return descs_per_consensus
-
-def port_filter(desc, port):
-    return desc.exit_policy.can_exit_to(port=port)
-
-
-def family_filter(desc, families):
-    return any(fp in families for fp in desc.family)
-
-# make modular for diff subnets
-def subnet_filter(desc, ip):
-    def find_prefix(ip):
-        return '.'.join(ip.split('.')[:-1])
-
-    return find_prefix(desc.address) == find_prefix(ip)
-
-def flag_filter(desc, flag):
-    # desc is from ns doc, not server desc
-    # flags is not present in server desc
-    return flag in desc.flags
 
 def calculate_bw(desc):
     return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
@@ -104,14 +85,8 @@ if __name__ == "__main__":
     desc_path = []
     consensus_path = []
 
-    for dirpath, dirname, filenames in os.walk(sys.argv[1]):
-        for filename in filenames:
-            path = os.path.join(dirpath, filename)
-            if 'desc' in dirpath:
-                desc_path.append(path)
-            elif 'consensus' in dirpath:
-                consensus_path.append(path)
-
+    desc_path = [sys.argv[1]]
+    consensus_path =[sys.argv[2]]
     print desc_path, consensus_path
 
     try:
@@ -119,7 +94,8 @@ if __name__ == "__main__":
             descs = pickle.load(input_pickle)
     except:
         descs = process_server_desc(desc_path)
+        print desc
         with open('server_desc.pkl', 'wb') as output_pickle:
             pickle.dump(descs, output_pickle)
 
-    find_desc(descs, consensus_path)
+            #find_desc(descs, consensus_path)
