@@ -1,0 +1,4 @@
+# store descs and consensus files
+in/
+# download stem for torproject.org
+stem/
