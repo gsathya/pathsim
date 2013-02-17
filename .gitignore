@@ -2,3 +2,5 @@
 in/
 # download stem for torproject.org
 stem/
+
+*.pyc
