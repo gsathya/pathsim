@@ -3,17 +3,37 @@ import sys
 import pickle
 import argparse
 import logging
-from collections import defaultdict
+
+from utils import timestamp
 
 import stem.descriptor.reader as reader
 
+# move to utils.py?
+def skip_listener(path, exception):
+    logging.error("%s : %s", path, exception)
+
 def process_server_desc(paths):
+    """
+    Read server descriptors and store them in dicts along with their
+    timestamps.
+
+    Dict = {fingerprint : descriptor}
+    """
     descs = {}
+    num_desc = 0
+
+    logging.info("Reading descriptors from %s", paths)
 
     with reader.DescriptorReader(paths, validate=False) as desc_reader:
+        desc_reader.register_skip_listener(skip_listener)
         for desc in desc_reader:
             desc.unix_timestamp = timestamp(desc.published)
             descs.setdefault(desc.fingerprint, []).append(desc)
+
+            num_desc += 1
+            if num_desc % 10000 == 0:
+                logging.info("%s descriptors processed.", num_desc)
+
     return descs
 
 def find_desc(descs, consensus_paths):
@@ -104,3 +124,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info("Starting pathsim.")
+
+    if args.process:
+        process_server_desc(os.path.abspath(args.descs))
