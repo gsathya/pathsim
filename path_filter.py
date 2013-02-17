@@ -4,14 +4,12 @@ class PathFilter:
 
 class SubnetFilter(PathFilter):
     """
-    Takes a path and checks if two relays belong to same /16 subnet.
-    Returns true if they do not.
+    Takes a path and returns true if no two relays belong to same /16 subnet
     """
     def validate(self, path):
         """
-        :param list path: list of relays in path (maybe create a Path class later?)
+        :param list path: list of relays in path (maybe create a Path class)
         """
-
         while path:
             relay = path.pop()
             # XXX: Do IPv4 checks  - use stem helper methods.
@@ -24,4 +22,13 @@ class SubnetFilter(PathFilter):
         return True
 
 class UniqueFilter(PathFilter):
-    pass
+    """
+    Takes a path and returns true if no two same relays are present in the path.
+    """
+    def validate(self, path):
+        """
+        :param list path: list of relays in path (maybe create a Path class)
+        """
+        unique_path = set([router.fingerprint for router in path])
+
+        return len(unique_path) == len(path)
