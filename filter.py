@@ -1,5 +1,5 @@
 class Filter:
-    def check(self, router):
+    def validate(self, router):
         raise NotImplementedError
 
 class RouterFilters:
@@ -11,7 +11,7 @@ class RouterFilters:
 
     def execute(self, descriptor):
         for router_filter in self.filters:
-            if not router_filter.check(descriptor):
+            if not router_filter.validate(descriptor):
                 return False
         return True
 
@@ -22,7 +22,7 @@ class PortFilter(Filter):
     def __init__(self, port):
         self.port = port
 
-    def check(self, router):
+    def validate(self, router):
         for rule in router.exit_policy:
             if (self.port >= rule.min_port and self.port <= rule.max_port and
                 rule.is_accept):
@@ -36,14 +36,11 @@ class PortFilter(Filter):
 
 class SubnetFilter(Filter):
     """
-    Takes IPv4 addresses as strings and checks if the first two bytes
+    Takes IPv4 addresses as strings and validates if the first two bytes
     are equal.
     """
     # XXX: Do IPv4 checks initially - use stem helper methods.
-    # IPv4 checks will slow this down. Should we care enough?
-    # Also, there is a more pythonic way to do this, but this is
-    # faster.
-    def check(self, address1, address2):
+    def validate(self, address1, address2):
         octect = 1
         for (x, y) in zip(address1, address2):
             if x != y:
@@ -57,5 +54,3 @@ class SubnetFilter(Filter):
         if octect < 2:
             # this isn't valid ipv4
             raise ValueError('SubnetFilter needs IPv4 address strings')
-
-
