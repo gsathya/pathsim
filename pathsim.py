@@ -1,7 +1,7 @@
 import os
 import sys
 import pickle
-
+import logging
 from collections import defaultdict
 
 import stem.descriptor.reader as reader
@@ -11,7 +11,6 @@ def process_server_desc(paths):
 
     with reader.DescriptorReader(paths, validate=False) as desc_reader:
         for desc in desc_reader:
-            print desc
             desc.unix_timestamp = timestamp(desc.published)
             descs.setdefault(desc.fingerprint, []).append(desc)
     return descs
@@ -80,15 +79,8 @@ if __name__ == "__main__":
 
     desc_path = [sys.argv[1]]
     consensus_path =[sys.argv[2]]
+
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.info("Starting pathsim.")
+
     print desc_path, consensus_path
-
-    try:
-        with open('server_desc.pkl', 'rb') as input_pickle:
-            descs = pickle.load(input_pickle)
-    except:
-        descs = process_server_desc(desc_path)
-        print desc
-        with open('server_desc.pkl', 'wb') as output_pickle:
-            pickle.dump(descs, output_pickle)
-
-            #find_desc(descs, consensus_path)
