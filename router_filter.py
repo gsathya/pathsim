@@ -4,7 +4,7 @@ class RouterFilter:
 
 class RouterFilters:
     """
-    Maintain list of routers
+    Maintain list of router filters
     """
     def __init__(self):
         self.filters = []
@@ -49,7 +49,7 @@ class FlagFilter(RouterFilter):
 
 class PortFilter(RouterFilter):
     """
-    Returns if there is *some* ip that relay will exit to port.
+    Returns true if there is *some* ip that relay will exit to port.
     """
     def __init__(self, port):
         """
