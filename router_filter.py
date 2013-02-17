@@ -71,3 +71,13 @@ class PortFilter(RouterFilter):
 
         # if no rule matches, return True
         return True
+
+class HibernateFilter(RouterFilter):
+    """
+    Returns true if router is not hibernating
+    """
+    def validate(self, router):
+        """
+        :param router: router object
+        """
+        return not router.hibernating
