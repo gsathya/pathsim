@@ -1,6 +1,7 @@
 import os
 import sys
 import pickle
+import argparse
 import logging
 from collections import defaultdict
 
@@ -73,14 +74,33 @@ def find_cw(desc, weights, position):
 
     return bw
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--process", help="Pair consensuses with recent descriptors",
+                    action="store_true")
+    parser.add_argument("-x", "--simulate", help="Do a bunch of simulated path selections using consensus from --in, processed descriptors from --out, and taking --samples",
+                    action="store_true")
+    parser.add_argument("-c", "--consensus", help="List of input consensus documents", default="in/consensuses")
+    parser.add_argument("-d", "--descs", help="List of input descriptor documents", default='in/desc')
+    parser.add_argument("-o", "--output", help="Output dir", default='out/processed-descriptors')
+    parser.add_argument("-l", "--log", help="Logging level", default="DEBUG")
+
+    args = parser.parse_args()
+
+    if not args.process or args.simulate:
+        parser.error('No action requested, add --process or --simulate')
+
+    return args
+
 if __name__ == "__main__":
+    args = parse_args()
+
     desc_path = []
     consensus_path = []
 
-    desc_path = [sys.argv[1]]
-    consensus_path =[sys.argv[2]]
+    log_level = getattr(logging, args.log.upper(), None)
+    if not isinstance(log_level, int):
+        raise ValueError('Invalid log level: %s' % args.log)
 
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info("Starting pathsim.")
-
-    print desc_path, consensus_path
