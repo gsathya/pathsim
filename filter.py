@@ -41,16 +41,4 @@ class SubnetFilter(Filter):
     """
     # XXX: Do IPv4 checks initially - use stem helper methods.
     def validate(self, address1, address2):
-        octect = 1
-        for (x, y) in zip(address1, address2):
-            if x != y:
-                return False
-            if x == '.':
-                octect += 1
-            if octect > 2:
-                # we have two equal octects
-                return True
-
-        if octect < 2:
-            # this isn't valid ipv4
-            raise ValueError('SubnetFilter needs IPv4 address strings')
+        return address1.rsplit('.', 1)[0] == address2.rsplit('.', 1)[0]
