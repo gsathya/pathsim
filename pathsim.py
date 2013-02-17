@@ -1,17 +1,10 @@
 import os
 import sys
-import datetime
 import pickle
 
 from collections import defaultdict
 
 import stem.descriptor.reader as reader
-
-def timestamp(t):
-    """Returns UNIX timestamp"""
-    td = t - datetime.datetime(1970, 1, 1)
-    ts = td.days*24*60*60 + td.seconds
-    return ts
 
 def process_server_desc(paths):
     descs = {}
