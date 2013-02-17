@@ -81,3 +81,21 @@ class HibernateFilter(RouterFilter):
         :param router: router object
         """
         return not router.hibernating
+
+class MinBWFilter(RouterFilter):
+    """
+    Returns true if router's bw is above min bw
+    """
+    def __init__(self, bw, consensus):
+        """
+        :param int bw: minimum bandwidth
+        :param consensus: dict of all relays in consensus
+        """
+        self.bw = bw
+        self.consensus = consensus
+
+    def validate(self, router):
+        """
+        :param router: router object
+        """
+        return self.consensus[router.fingerprint].bandwidth > self.bw
