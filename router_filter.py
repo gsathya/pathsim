@@ -1,8 +1,8 @@
 class RouterFilter:
-    def validate(self):
+    def validate(self, router):
         raise NotImplementedError
 
-class RouterFilters:
+class RouterFilterList:
     """
     Maintain list of router filters
     """
