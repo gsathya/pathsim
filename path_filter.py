@@ -2,6 +2,28 @@ class PathFilter:
     def validate(self, path):
         raise NotImplementedError
 
+class PathFilterList:
+    """
+    Maintain list of path filters
+    """
+    def __init__(self):
+        self.filters = []
+
+    def add_filter(self, filter):
+        """
+        :param PathFilter filter: filter is an object of PathFilter
+        """
+        self.filters.append(filter)
+
+    def execute(self, router):
+        """
+        :param path: list of relays in a path
+        """
+        for router_filter in self.filters:
+            if not router_filter.validate(router):
+                return False
+        return True
+
 class SubnetFilter(PathFilter):
     """
     Takes a path and returns true if no two relays belong to same /16 subnet
