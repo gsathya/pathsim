@@ -33,7 +33,7 @@ class FlagFilter(RouterFilter):
         :param consensus: dict of all relays in consensus
         :param str flag: flag to be checked
         """
-        #XXX: check if 'flag' is valid flag?
+        #XXX: check if 'flag' is a valid flag string?
         self.flag = flag
         self.consensus = consensus
 
