@@ -38,11 +38,23 @@ def process_server_desc(paths):
 
 def find_desc(descs, consensus_paths):
     with reader.DescriptorReader(consensus_paths) as desc_reader:
-        descs_per_consensus = []
+        valid_after = None
+
         # this is O(n*n). optimize.
         for router in desc_reader:
+            if valid_after != router.document.valid_after:
+                # when valid_after is None we shouldn't write
+                # anything
+                if valid_after:
+                    write_processed_descs(descs_per_consensus, valid_after, found, not_found)
+
+                descs_per_consensus = []
+                found, not_found = 0, 0
+                valid_after = router.document.valid_after
+
             matched_descs = descs.get(router.fingerprint, None)
             if matched_descs:
+                found += 1
                 published = timestamp(router.published)
                 selected_desc = matched_descs[0]
                 for desc in matched_descs:
@@ -51,9 +63,16 @@ def find_desc(descs, consensus_paths):
                 # server descs don't have flags, lets steal
                 # it from the consensus
                 selected_desc.flags = router.flags
-                descs_per_consensus.setdefault(router.document.valid_after, []).append(selected_desc)
+                descs_per_consensus.append(selected_desc)
+            else:
+                not_found += 1
 
-    return descs_per_consensus
+def write_processed_descs(descs_per_consensus, valid_after,found, not_found):
+    logging.info("Writing descs into %s",
+                 valid_after.strftime('%Y-%m-%d-%H-%M-%S-descriptors'))
+    logging.info("Wrote descriptors for %s relays", found)
+    logging.info("Did not find descriptors for %s relays", not_found)
+
 
 def calculate_bw(desc):
     return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
@@ -110,6 +129,12 @@ def parse_args():
     if not args.process or args.simulate:
         parser.error('No action requested, add --process or --simulate')
 
+    if not os.path.exists(args.descs):
+        parser.error('%s does not exist' % args.descs)
+
+    if not os.path.exists(args.consensus):
+        parser.error('%s does not exist' % args.consensus)
+
     return args
 
 if __name__ == "__main__":
@@ -117,6 +142,7 @@ if __name__ == "__main__":
 
     desc_path = []
     consensus_path = []
+    descs = {}
 
     log_level = getattr(logging, args.log.upper(), None)
     if not isinstance(log_level, int):
@@ -126,4 +152,5 @@ if __name__ == "__main__":
     logging.info("Starting pathsim.")
 
     if args.process:
-        process_server_desc(os.path.abspath(args.descs))
+        descs = process_server_desc(os.path.abspath(args.descs))
+        find_desc(descs, os.path.abspath(args.consensus))
