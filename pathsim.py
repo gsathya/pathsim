@@ -73,9 +73,7 @@ def find_desc(descs, consensus_paths):
 def write_processed_descs(descs_per_consensus, valid_after,found, not_found):
     logging.info("Writing descs into %s",
                  valid_after.strftime('%Y-%m-%d-%H-%M-%S-descriptors'))
-    logging.info("Wrote descriptors for %s relays", found)
-    logging.info("Did not find descriptors for %s relays", not_found)
-
+    logging.info("Descriptors - Found : %s, Not Found : %s", found, not_found)
 
 def calculate_bw(desc):
     return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
