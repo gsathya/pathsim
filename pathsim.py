@@ -17,7 +17,7 @@ def process_server_desc(paths):
     Read server descriptors and store them in dicts along with their
     timestamps.
 
-    Dict = {fingerprint : descriptor}
+    descs = {fingerprint : descriptor}
     """
     descs = {}
     num_desc = 0
@@ -37,6 +37,9 @@ def process_server_desc(paths):
     return descs
 
 def find_desc(descs, consensus_paths):
+    """
+    Find descriptors pertaining to a particular consensus document
+    """
     with reader.DescriptorReader(consensus_paths) as desc_reader:
         valid_after = None
 
@@ -113,8 +116,7 @@ def find_cw(desc, weights, position):
 
     return bw
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+def parse_args(parser):
     parser.add_argument("-p", "--process", help="Pair consensuses with recent descriptors",
                     action="store_true")
     parser.add_argument("-x", "--simulate", help="Do a bunch of simulated path selections using consensus from --in, processed descriptors from --out, and taking --samples",
@@ -124,7 +126,11 @@ def parse_args():
     parser.add_argument("-o", "--output", help="Output dir", default='out/processed-descriptors')
     parser.add_argument("-l", "--log", help="Logging level", default="DEBUG")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    args = parse_args(parser)
 
     if not args.process or args.simulate:
         parser.error('No action requested, add --process or --simulate')
@@ -135,18 +141,13 @@ def parse_args():
     if not os.path.exists(args.consensus):
         parser.error('%s does not exist' % args.consensus)
 
-    return args
-
-if __name__ == "__main__":
-    args = parse_args()
+    log_level = getattr(logging, args.log.upper(), None)
+    if not isinstance(log_level, int):
+        parser.error('Invalid log level: %s' % args.log)
 
     desc_path = []
     consensus_path = []
     descs = {}
-
-    log_level = getattr(logging, args.log.upper(), None)
-    if not isinstance(log_level, int):
-        raise ValueError('Invalid log level: %s' % args.log)
 
     logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info("Starting pathsim.")
