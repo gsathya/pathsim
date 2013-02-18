@@ -36,7 +36,7 @@ def process_server_desc(paths):
 
     return descs
 
-def find_desc(descs, consensus_paths):
+def find_desc(descs, consensus_paths, desc_writer):
     """
     Find descriptors pertaining to a particular consensus document
     """
@@ -49,8 +49,9 @@ def find_desc(descs, consensus_paths):
                 # when valid_after is None we shouldn't write
                 # anything
                 if valid_after:
-                    write_processed_descs(descs_per_consensus, valid_after, found, not_found)
-
+                    desc_writer(descs_per_consensus, valid_after)
+                    logging.info("Descriptors - Found : %s, Not Found : %s",
+                                 found, not_found)
                 descs_per_consensus = []
                 found, not_found = 0, 0
                 valid_after = router.document.valid_after
@@ -61,7 +62,8 @@ def find_desc(descs, consensus_paths):
                 published = timestamp(router.published)
                 selected_desc = matched_descs[0]
                 for desc in matched_descs:
-                    if desc.unix_timestamp <= published and desc.unix_timestamp >= selected_desc.unix_timestamp:
+                    if (desc.unix_timestamp <= published and
+                        desc.unix_timestamp >= selected_desc.unix_timestamp):
                         selected_desc = desc
                 # server descs don't have flags, lets steal
                 # it from the consensus
@@ -70,10 +72,19 @@ def find_desc(descs, consensus_paths):
             else:
                 not_found += 1
 
-def write_processed_descs(descs_per_consensus, valid_after,found, not_found):
-    logging.info("Writing descs into %s",
-                 valid_after.strftime('%Y-%m-%d-%H-%M-%S-descriptors'))
-    logging.info("Descriptors - Found : %s, Not Found : %s", found, not_found)
+def descriptor_writer(output_dir):
+    def write_processed_descs(descs_per_consensus, valid_after):
+        file_name = valid_after.strftime('%Y-%m-%d-%H-%M-%S-descriptors')
+        logging.info("Writing descs into %s", file_name)
+        outpath = os.path.join(output_dir, file_name)
+
+        with open(outpath, 'wb') as output:
+            output.write('@type server-descriptor 1.0\n')
+            for desc in descs_per_consensus:
+                output.write(unicode(desc).encode('utf8'))
+                output.write('\n')
+
+    return write_processed_descs
 
 def calculate_bw(desc):
     return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
@@ -139,6 +150,10 @@ if __name__ == "__main__":
     if not os.path.exists(args.consensus):
         parser.error('%s does not exist' % args.consensus)
 
+    output_dir = os.path.abspath(args.output)
+    if not os.path.exists(args.output):
+        os.makedirs(output_dir)
+
     log_level = getattr(logging, args.log.upper(), None)
     if not isinstance(log_level, int):
         parser.error('Invalid log level: %s' % args.log)
@@ -152,4 +167,5 @@ if __name__ == "__main__":
 
     if args.process:
         descs = process_server_desc(os.path.abspath(args.descs))
-        find_desc(descs, os.path.abspath(args.consensus))
+        desc_writer = descriptor_writer(output_dir)
+        find_desc(descs, os.path.abspath(args.consensus), desc_writer)
