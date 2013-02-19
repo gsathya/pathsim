@@ -145,7 +145,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = parse_args(parser)
 
-    if not args.process or args.simulate:
+    if not (args.process or args.simulate):
         parser.error('No action requested, add --process or --simulate')
 
     if not os.path.exists(args.descs):
@@ -166,6 +166,7 @@ if __name__ == "__main__":
     consensus_path = []
     descs = {}
 
+    # setup logging
     logging.basicConfig(level=log_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info("Starting pathsim.")
 
