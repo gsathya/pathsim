@@ -3,8 +3,5 @@ Rough version of a path simulator for Tor.
 - stem comments.txt: Running observations on stem for Damian.
 
 TODO -
-* Process server desc + consensus doc
-** Write processed descs into file
-
 * Simulate
 ** Create circuits
