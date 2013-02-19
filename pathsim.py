@@ -78,6 +78,10 @@ def descriptor_writer(output_dir):
         logging.info("Writing descs into %s", file_name)
         outpath = os.path.join(output_dir, file_name)
 
+        if os.path.exists(outpath):
+            logging.error("%s file already exists", outpath)
+            # break?
+
         with open(outpath, 'wb') as output:
             output.write('@type server-descriptor 1.0\n')
             for desc in descs_per_consensus:
