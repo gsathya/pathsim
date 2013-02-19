@@ -166,6 +166,6 @@ if __name__ == "__main__":
     logging.info("Starting pathsim.")
 
     if args.process:
-        descs = process_server_desc(os.path.abspath(args.descs))
         desc_writer = descriptor_writer(output_dir)
-        find_desc(descs, os.path.abspath(args.consensus), desc_writer)
+        descs = process_server_desc(os.path.abspath(args.descs))
+        find_desc(descs, output_dir, desc_writer)
