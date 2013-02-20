@@ -73,7 +73,13 @@ def find_desc(descs, consensus_paths, desc_writer):
                 not_found += 1
 
 def descriptor_writer(output_dir):
+    """
+    Return a function that writes descs into a file.
+    """
     def write_processed_descs(descs_per_consensus, valid_after):
+        """
+        Write descs to a file.
+        """
         file_name = valid_after.strftime('%Y-%m-%d-%H-%M-%S-descriptors')
         logging.info("Writing descs into %s", file_name)
         outpath = os.path.join(output_dir, file_name)
@@ -93,41 +99,44 @@ def descriptor_writer(output_dir):
 def calculate_bw(desc):
     return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
 
-def find_cw(desc, weights, position):
-    bw = desc.calculate_bw(desc)
-    flags = desc.flags
+def get_bw_weight(router, weights, position):
+    bw_weight = None
+    flags = router.flags
 
     guard = 'Guard' in flags
     exit = 'Exit' in flags
 
-    # improve this by writing some py magic
     if position == 'guard':
         if guard and exit:
-            bw *= weights['Wgd']
+            bw_weight = weights['Wgd']
         elif guard:
-            bw *= weights['Wgg']
+            bw_weight = weights['Wgg']
         else:
-            bw *= weights['Wgm']
+            bw_weight = weights['Wgm']
     elif position == 'middle':
         if guard and exit:
-            bw *= weights['Wmd']
+            bw_weight = weights['Wmd']
         elif guard:
-            bw *= weights['Wgm']
+            bw_weight = weights['Wgm']
         elif exit:
-            bw *= weights['Wme']
+            bw_weight = weights['Wme']
         else:
-            bw *= weights['Wmm']
+            bw_weight = weights['Wmm']
     elif position == 'exit':
         if guard and exit:
-            bw *= weights['Wed']
+            bw_weight = weights['Wed']
         elif guard:
-            bw *= weights['Weg']
+            bw_weight = weights['Weg']
         elif exit:
-            bw *= weights['Wee']
+            bw_weight = weights['Wee']
         else:
-            bw *= weights['Wed']
+            bw_weight = weights['Wed']
 
-    return bw
+    if not bw_weight:
+        raise ValueError("Bandwidth weight does not exist for %s position" %
+                         position)
+
+    return bw_weight
 
 def parse_args(parser):
     parser.add_argument("-p", "--process", help="Pair consensuses with recent descriptors",
@@ -174,3 +183,5 @@ if __name__ == "__main__":
         desc_writer = descriptor_writer(output_dir)
         descs = process_server_desc(os.path.abspath(args.descs))
         find_desc(descs, output_dir, desc_writer)
+    elif args.simulate:
+        print "yo simulator"
