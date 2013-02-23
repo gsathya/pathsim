@@ -5,7 +5,7 @@ import argparse
 import logging
 
 from utils import *
-from simulate import simulate
+from simulate import *
 
 from stem.descriptor import parse_file, DocumentHandler
 import stem.descriptor.reader as reader
@@ -165,5 +165,5 @@ if __name__ == "__main__":
         #     for filename in filenames:
         #         cons_path.append(os.path.join(dirpath,filename))
         cons_path = os.path.abspath(args.consensus)
-        descs = process_server_desc(desc_path[0])
-        simulate(descs, cons_path)
+        simulation = Simulation(desc_path[0], cons_path)
+        simulation.simulate()
