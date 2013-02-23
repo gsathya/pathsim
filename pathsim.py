@@ -4,37 +4,11 @@ import pickle
 import argparse
 import logging
 
-from utils import timestamp
+from utils import *
+from simulate import simulate
 
+from stem.descriptor import parse_file, DocumentHandler
 import stem.descriptor.reader as reader
-
-# move to utils.py?
-def skip_listener(path, exception):
-    logging.error("%s : %s", path, exception)
-
-def process_server_desc(paths):
-    """
-    Read server descriptors and store them in dicts along with their
-    timestamps.
-
-    descs = {fingerprint : descriptor}
-    """
-    descs = {}
-    num_desc = 0
-
-    logging.info("Reading descriptors from %s", paths)
-
-    with reader.DescriptorReader(paths, validate=False) as desc_reader:
-        desc_reader.register_skip_listener(skip_listener)
-        for desc in desc_reader:
-            desc.unix_timestamp = timestamp(desc.published)
-            descs.setdefault(desc.fingerprint, []).append(desc)
-
-            num_desc += 1
-            if num_desc % 10000 == 0:
-                logging.info("%s descriptors processed.", num_desc)
-
-    return descs
 
 def find_desc(descs, consensus_paths, desc_writer):
     """
@@ -171,8 +145,7 @@ if __name__ == "__main__":
     if not isinstance(log_level, int):
         parser.error('Invalid log level: %s' % args.log)
 
-    desc_path = []
-    consensus_path = []
+    desc_path, cons_path = [], []
     descs = {}
 
     # setup logging
@@ -184,4 +157,13 @@ if __name__ == "__main__":
         descs = process_server_desc(os.path.abspath(args.descs))
         find_desc(descs, output_dir, desc_writer)
     elif args.simulate:
-        print "yo simulator"
+        for dirpath, dirnames, filenames in os.walk(os.path.abspath(args.output)):
+            for filename in filenames:
+                desc_path.append(os.path.join(dirpath, filename))
+
+        # for dirpath, dirnames, filenames in os.walk(os.path.abspath(args.consensus)):
+        #     for filename in filenames:
+        #         cons_path.append(os.path.join(dirpath,filename))
+        cons_path = os.path.abspath(args.consensus)
+        descs = process_server_desc(desc_path[0])
+        simulate(descs, cons_path)
