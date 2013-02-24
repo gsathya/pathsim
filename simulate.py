@@ -1,6 +1,16 @@
 from utils import *
 import stem.descriptor.reader as reader
 
+class Circuit:
+    def __init__(self):
+        self.time = None
+        self.fast = None
+        self.stable = None
+        self.internal = None
+        self.dirty_time = None
+        self.ports = None
+        self.path = None
+
 class Simulation:
     def __init__(self, desc_path, cons_path):
         self.document = None
