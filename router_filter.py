@@ -13,7 +13,10 @@ class RouterFilterList:
         """
         :param RouterFilter filter: filter is an object of RouterFilter
         """
-        self.filters.append(filter)
+        if isinstance(filter, list):
+            self.filters.extend(filter)
+        else:
+            self.filters.append(filter)
 
     def execute(self, router):
         """
@@ -22,13 +25,14 @@ class RouterFilterList:
         for router_filter in self.filters:
             if not router_filter.validate(router):
                 return False
+
         return True
 
 class FlagFilter(RouterFilter):
     """
-    Return true if given flag is present
+    Return 'inverse' if given flag is present
     """
-    def __init__(self, flag, consensus):
+    def __init__(self, flag, consensus, inverse=True):
         """
         :param consensus: dict of all relays in consensus
         :param str flag: flag to be checked
@@ -36,16 +40,19 @@ class FlagFilter(RouterFilter):
         #XXX: check if 'flag' is a valid flag string?
         self.flag = flag
         self.consensus = consensus
+        self.inverse = inverse
 
     def validate(self, router):
         """
         :param router: router object
         """
-        # raise exception if not found?
-        if router.fingerprint in self.consensus:
-            return self.flag in consensus[router.fingerprint].flags
-
-        return False
+        try:
+            if self.flag in self.consensus[router.fingerprint].flags:
+                return self.inverse
+            else:
+                return not self.inverse
+        except:
+                return not self.inverse
 
 class PortFilter(RouterFilter):
     """
