@@ -1,5 +1,5 @@
 from utils import *
-from router_filter import *
+from filters import *
 
 import stem.descriptor.reader as reader
 
