@@ -1,13 +1,14 @@
-class RouterFilterList:
+class FilterList:
     """
-    Maintain list of router filters
+    Maintain list of filters
     """
-    def __init__(self):
-        self.filters = []
+    def __init__(self, filters=[], descs=None):
+        self.filters = filters
+        self.descs = descs
 
     def add_filter(self, filter):
         """
-        :param RouterFilter filter: filter is an object of RouterFilter
+        :param filter: filter is a filter object or list of filters objects
         """
         if isinstance(filter, list):
             self.filters.extend(filter)
@@ -23,6 +24,12 @@ class RouterFilterList:
                 return False
 
         return True
+
+    def validate(self):
+        """
+        Return dict of all routers that conform to the filters
+        """
+        return dict(filter(lambda (key, value): self.execute(value[0]), self.descs.items()))
 
 class RouterFilter:
     def validate(self, router):

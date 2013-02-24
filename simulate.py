@@ -51,12 +51,8 @@ class Simulation:
         if not internal and port:
             filters.append(PortFilter(port))
 
-        exit_filter = RouterFilterList()
-        exit_filter.add_filter(filters)
-
-        for fp, router in self.descs.items():
-            if exit_filter.execute(router[0]):
-                exit_nodes[fp] = router
+        exit_filter = FilterList(filters, self.descs)
+        exit_nodes = exit_filter.validate()
 
         return exit_nodes
 
