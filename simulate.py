@@ -38,9 +38,12 @@ class Simulation:
         filters = []
         exit_nodes = {}
 
-        filters.extend([FlagFilter("BadExit", self.consensus, False),
-                       FlagFilter("Running", self.consensus),
-                       FlagFilter("Valid", self.consensus)])
+        filters.extend([
+            FlagFilter("BadExit", self.consensus, False),
+            FlagFilter("Running", self.consensus),
+            FlagFilter("Valid", self.consensus),
+            HibernateFilter()
+            ])
         if fast:
             filters.append(FlagFilter("Fast", self.consensus))
         if stable:
@@ -57,6 +60,21 @@ class Simulation:
 
         return exit_nodes
 
+    def get_middle_nodes(self, fast=None, stable=None, exit=None, path=None):
+        filters = []
+        middle_nodes = {}
+
+        filters.extend([
+            FlagFilter("Running", self.consensus),
+            HibernateFilter()
+            ])
+        if fast:
+            filters.append(FlagFilter("Fast", self.consensus))
+        if stable:
+            filters.append(FlagFilter("Stable", self.consensus))
+        if path:
+            pass
+
     def simulate(self):
         self.descs = process_server_desc(self.desc_path)
 
@@ -71,4 +89,4 @@ class Simulation:
         #     logging.error('No. of processed descs != No. of routers in consensus')
 
         self.rotate_guards()
-        exit_nodes = self.get_exit_nodes(True, True)
+        exit_nodes = self.get_exit_nodes(fast=True, stable=True)
