@@ -4,4 +4,9 @@ Rough version of a path simulator for Tor.
 
 TODO -
 * Simulate
+** Find exit, middle, guard nodes
+** Figure out Port needs
+** Create Streams
+** Guard Rotation
 ** Create circuits
+** Attach Streams to Circuits
