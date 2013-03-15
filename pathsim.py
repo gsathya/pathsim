@@ -73,44 +73,6 @@ def descriptor_writer(output_dir):
 def calculate_bw(desc):
     return min(desc.average_bandwidth, desc.burst_bandwidth, desc.observed_bandwidth)
 
-def get_bw_weight(router, weights, position):
-    bw_weight = None
-    flags = router.flags
-
-    guard = 'Guard' in flags
-    exit = 'Exit' in flags
-
-    if position == 'guard':
-        if guard and exit:
-            bw_weight = weights['Wgd']
-        elif guard:
-            bw_weight = weights['Wgg']
-        else:
-            bw_weight = weights['Wgm']
-    elif position == 'middle':
-        if guard and exit:
-            bw_weight = weights['Wmd']
-        elif guard:
-            bw_weight = weights['Wgm']
-        elif exit:
-            bw_weight = weights['Wme']
-        else:
-            bw_weight = weights['Wmm']
-    elif position == 'exit':
-        if guard and exit:
-            bw_weight = weights['Wed']
-        elif guard:
-            bw_weight = weights['Weg']
-        elif exit:
-            bw_weight = weights['Wee']
-        else:
-            bw_weight = weights['Wed']
-
-    if not bw_weight:
-        raise ValueError("Bandwidth weight does not exist for %s position" %
-                         position)
-
-    return bw_weight
 
 def parse_args(parser):
     parser.add_argument("-p", "--process", help="Pair consensuses with recent descriptors",
