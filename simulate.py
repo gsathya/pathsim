@@ -3,6 +3,13 @@ from filters import *
 
 import stem.descriptor.reader as reader
 
+class Stream:
+    def __init__(self, hostname=None, port=None):
+        self.hostname = hostname
+        self.port = port
+        self.type = None
+        self.time = None
+
 class Circuit:
     def __init__(self):
         self.time = None
@@ -11,7 +18,7 @@ class Circuit:
         self.internal = None
         self.dirty_time = None
         self.ports = None
-        self.path = None
+        self.streams = None
 
 class Simulation:
     def __init__(self, desc_path, cons_path):
@@ -21,6 +28,7 @@ class Simulation:
         self.desc_path = desc_path
         self.cons_path = cons_path
         self.guards = {}
+        self.streams = []
         self.circuits = []
         self.exit_circuits = []
         self.internal_circuits = []
@@ -56,36 +64,37 @@ class Simulation:
 
         return exit_nodes
 
-    def get_position_weights(self, routers, position, bwweightscale):
+    def get_position_weights(self, nodes, position, bwweightscale):
         """
         Computes the consensus "bandwidth" weighted by position weights.
         """
         weights = {}
-        for router in routers.keys():
-            bw = float(self.consensus[router].bandwidth)
-            weight = float(get_bw_weight(router, position)) / float(bwweightscale)
-            weights[router] = bw * weight
+        for node in nodes.keys():
+            bw = float(self.consensus[node].bandwidth)
+            weight = float(self.get_bw_weight(node, position)) / float(bwweightscale)
+            weights[node] = bw * weight
 
         return weights
 
-    def get_weighted_routers(self, routers, weights):
+    def get_weighted_nodes(self, nodes, weights):
         """
-        Takes list of routers (rel_stats) and weights (as a dict) and outputs
-        a list of (router, cum_weight) pairs, where cum_weight is the cumulative
-        probability of the routers weighted by weights.
+        Takes list of nodes (rel_stats) and weights (as a dict) and outputs
+        a list of (node, cum_weight) pairs, where cum_weight is the cumulative
+        probability of the nodes weighted by weights.
         """
         # compute total weight
-        total_weight = 0
-        for router in routers:
-            total_weight += weights[router]
-        # create cumulative weights
-        weighted_routers = []
-        cum_weight = 0
-        for router in routers:
-            cum_weight += weights[router]/total_weight
-            weighted_routers.append((router, cum_weight))
+        total_weight = sum(weights.values())
 
-        return weighted_routers
+        # create cumulative weights
+        weighted_nodes = []
+        cum_weight = 0
+
+        #XXX: shouldn't we iterate on a sorted list of nodes by weights
+        for node in nodes:
+            cum_weight += weights[node]/total_weight
+            weighted_nodes.append((node, cum_weight))
+
+        return weighted_nodes
 
 
     def get_weighted_exits(self, bwweightscale, fast, stable, internal, ip, port):
@@ -111,7 +120,7 @@ class Simulation:
 
         return get_weighted_nodes(exits, weights)
 
-    def get_bw_weight(self, router, position):
+    def get_bw_weight(self, node, position):
         """
         Returns weight to apply to relay's bandwidth for given position.
 
@@ -120,7 +129,7 @@ class Simulation:
         """
 
         bw_weight = None
-        flags = router.flags
+        flags = self.consensus[node].flags
         weights = self.document.bandwidth_weights
         guard = 'Guard' in flags
         exit = 'Exit' in flags
@@ -178,10 +187,20 @@ class Simulation:
         #         print self.descs[fp]
 
         self.process_consensus()
+        bwweightscale = self.document.params['bwweightscale']
 
         # yucky test. think of alternative. commented out for now
         # if not len(set(self.consensus.keys())) == len(set(self.descs.keys())):
         #     logging.error('No. of processed descs != No. of routers in consensus')
 
         self.rotate_guards()
-        exit_nodes = self.get_exit_nodes(fast=True, stable=True)
+
+        self.streams = [Stream(port=80)]
+
+        for stream in self.streams:
+            exit_nodes = self.get_exit_nodes(fast=True, stable=True, port=stream.port)
+            exit_weights = self.get_position_weights(exit_nodes, 'exit', bwweightscale)
+            weighted_exits = self.get_weighted_nodes(exit_nodes, exit_weights)
+            # weighted_exits.sort(key=lambda s:s[1])
+            # print self.consensus[weighted_exits[-1][0]]
+            # print self.descs[weighted_exits[-1][0]][0]
