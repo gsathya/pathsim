@@ -64,14 +64,14 @@ class Simulation:
 
         return exit_nodes
 
-    def get_position_weights(self, nodes, position, bwweightscale):
+    def get_position_weights(self, nodes, position):
         """
         Computes the consensus "bandwidth" weighted by position weights.
         """
         weights = {}
         for node in nodes.keys():
             bw = float(self.consensus[node].bandwidth)
-            weight = float(self.get_bw_weight(node, position)) / float(bwweightscale)
+            weight = float(self.get_bw_weight(node, position)) / float(self.bwweightscale)
             weights[node] = bw * weight
 
         return weights
@@ -97,7 +97,7 @@ class Simulation:
         return weighted_nodes
 
 
-    def get_weighted_exits(self, bwweightscale, fast, stable, internal, ip, port):
+    def get_weighted_exits(self, fast, stable, internal, ip, port):
         """
         Returns list of (fprint,cum_weight) pairs for potential exits along with
         cumulative selection probabilities for use in a circuit with the indicated
@@ -113,10 +113,10 @@ class Simulation:
         weights = None
         if internal:
             weights = get_position_weights(exits, cons_rel_stats, 'm',\
-                        bw_weights, bwweightscale)
+                        bw_weights, self.bwweightscale)
         else:
             weights = get_position_weights(exits, cons_rel_stats, 'e',\
-                bw_weights, bwweightscale)
+                bw_weights, self.bwweightscale)
 
         return get_weighted_nodes(exits, weights)
 
@@ -179,6 +179,22 @@ class Simulation:
         if stable:
             filters.append(FlagFilter("Stable", self.consensus))
 
+    def get_guard_nodes(self, fast=True, valid=True):
+        filters = []
+        guard_nodes = {}
+
+        filters.append(FlagFilter("Guard", self.consensus))
+
+        if fast:
+            filters.append(FlagFilter("Fast", self.consensus))
+        if valid:
+            filters.append(FlagFilter("Valid", self.consensus))
+
+        guard_filter = FilterList(filters, self.descs)
+        guard_nodes = guard_filter.validate()
+
+        return guard_nodes
+
     def simulate(self):
         self.descs = process_server_desc(self.desc_path)
 
@@ -187,7 +203,7 @@ class Simulation:
         #         print self.descs[fp]
 
         self.process_consensus()
-        bwweightscale = self.document.params['bwweightscale']
+        self.bwweightscale = self.document.params['bwweightscale']
 
         # yucky test. think of alternative. commented out for now
         # if not len(set(self.consensus.keys())) == len(set(self.descs.keys())):
@@ -199,8 +215,9 @@ class Simulation:
 
         for stream in self.streams:
             exit_nodes = self.get_exit_nodes(fast=True, stable=True, port=stream.port)
-            exit_weights = self.get_position_weights(exit_nodes, 'exit', bwweightscale)
+            exit_weights = self.get_position_weights(exit_nodes, 'exit')
             weighted_exits = self.get_weighted_nodes(exit_nodes, exit_weights)
-            # weighted_exits.sort(key=lambda s:s[1])
-            # print self.consensus[weighted_exits[-1][0]]
-            # print self.descs[weighted_exits[-1][0]][0]
+
+            guard_nodes = self.get_guard_nodes()
+            guard_weights = self.get_position_weights(guard_nodes, 'guard')
+            weighted_guards = self.get_weighted_nodes(guard_nodes, guard_weights)
